@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Full screen centering */
+    body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    .navbar {
+        display: none !important;
+    }
+
+    .login-container {
+        display: flex;
+        width: 1000px;
+        max-width: 95%;
+        height: 600px;
+        background: var(--glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 30px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: cardFadeIn 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* Left Side: Visual */
+    .brand-side {
+        flex: 1.2;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .brand-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.8;
+        transform: scale(1.1);
+        animation: subtlePulse 20s infinite alternate;
+    }
+
+    .brand-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, rgba(10, 25, 47, 0.2), rgba(10, 25, 47, 0.9));
+    }
+
+    .brand-info {
+        position: absolute;
+        bottom: 50px;
+        left: 40px;
+        z-index: 2;
+    }
+
+    .brand-info h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        letter-spacing: -1px;
+    }
+
+    /* Right Side: Form */
+    .form-side {
+        flex: 1;
+        padding: 60px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .login-header {
+        margin-bottom: 40px;
+    }
+
+    .login-header h2 {
+        color: var(--white);
+        font-size: 1.75rem;
+        margin-bottom: 10px;
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: var(--white);
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        width: 100%;
+        border: none;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 102, 255, 0.5);
+    }
+
+    @keyframes cardFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes subtlePulse {
+        from {
+            transform: scale(1.1);
+        }
+
+        to {
+            transform: scale(1.2);
+        }
+    }
+
+    /* Mobile Friendly */
+    @media (max-width: 992px) {
+        .brand-side {
+            display: none;
+        }
+
+        .login-container {
+            width: 450px;
+            height: auto;
+        }
+
+        .form-side {
+            padding: 40px 30px;
+        }
+    }
+</style>
+
+<div class="login-container">
+    <div class="brand-side">
+        <img src="https://images.unsplash.com/photo-1508614589041-895b88991e3e?q=80&w=1000&auto=format&fit=crop"
+            class="brand-img" alt="Autonomous Drone">
+        <div class="brand-overlay"></div>
+        <div class="brand-info">
+            <h1 class="text-white">AERO<span style="color: var(--secondary)">ROUTE</span></h1>
+            <p class="text-muted fw-bold">NEXT-GEN MEDICAL LOGISTICS</p>
+        </div>
+    </div>
+
+    <div class="form-side">
+        <div class="login-header">
+            <h2>Authorized Access</h2>
+            <p class="text-muted small">Access the secure drone coordination network.</p>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="form-label-custom">Officer Identity</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted"
+                        style="border-color: var(--glass-border);">
+                        <i class="fas fa-id-badge"></i>
+                    </span>
+                    <input type="text" name="username" class="form-control bg-transparent border-start-0 text-white"
+                        placeholder="Enter Username" style="border-color: var(--glass-border); padding: 12px;" required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label-custom">Security Token</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted"
+                        style="border-color: var(--glass-border);">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                    <input type="password" name="password" class="form-control bg-transparent border-start-0 text-white"
+                        placeholder="••••••••" style="border-color: var(--glass-border); padding: 12px;" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login">
+                ESTABLISH CONNECTION <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </form>
+
+        <div class="text-center mt-5">
+            <small class="text-muted" style="font-size: 0.7rem; letter-spacing: 1px;">
+                <i class="fas fa-shield-alt text-secondary me-1"></i> ENCRYPTED CHANNEL SECURED
+            </small>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Autofocus first input
+    document.querySelector('input[name="username"]').focus();
+</script>
+{% endblock %}

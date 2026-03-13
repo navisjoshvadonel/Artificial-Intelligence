@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_7a7bb1a8ae649538c0737094d6c4bd7d {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_7a7bb1a8ae649538c0737094d6c4bd7d" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_7a7bb1a8ae649538c0737094d6c4bd7d = L.map(
+                "map_7a7bb1a8ae649538c0737094d6c4bd7d",
+                {
+                    center: [9.9252, 78.1198],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 13,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_da50c3a5912e93db44148b09fd9d3577 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_da50c3a5912e93db44148b09fd9d3577.addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var poly_line_710f2d079254c23a3221f67d4fcd7c6f = L.polyline(
+                [[9.9252, 78.1198], [9.92, 78.11], [9.8828, 78.0833], [9.9482, 78.1738], [9.9391, 78.1566], [9.9328, 78.1362], [9.9252, 78.1198]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var marker_139dc0970b8942325f36edc58635c9dc = L.marker(
+                [9.9252, 78.1198],
+                {
+}
+            ).addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var icon_5fc513d41c37e450e30d3d66402d783b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "play",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2ff9c7e25532bf72945fc4d4c3b7e71e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_178cccddca509d025b350892e01cc2cf = $(`<div id="html_178cccddca509d025b350892e01cc2cf" style="width: 100.0%; height: 100.0%;">START: Blood Bank (Govt Hospital)</div>`)[0];
+                popup_2ff9c7e25532bf72945fc4d4c3b7e71e.setContent(html_178cccddca509d025b350892e01cc2cf);
+            
+        
+
+        marker_139dc0970b8942325f36edc58635c9dc.bindPopup(popup_2ff9c7e25532bf72945fc4d4c3b7e71e)
+        ;
+
+        
+    
+    
+            marker_139dc0970b8942325f36edc58635c9dc.bindTooltip(
+                `<div>
+                     Blood Bank (Govt Hospital)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_139dc0970b8942325f36edc58635c9dc.setIcon(icon_5fc513d41c37e450e30d3d66402d783b);
+            
+    
+            var marker_46eaf2feec57310615f7e7eb6f33e23e = L.marker(
+                [9.92, 78.11],
+                {
+}
+            ).addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var icon_9e9bac3e1946c1e0709cdd8d9a8557c8 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_626d410bc8a7abe7e2a83238c2df0b5c = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_7d5e7f1318f5fe8ce02406945ca699c0 = $(`<div id="html_7d5e7f1318f5fe8ce02406945ca699c0" style="width: 100.0%; height: 100.0%;">Stop 1: Hannah Joseph Hospital</div>`)[0];
+                popup_626d410bc8a7abe7e2a83238c2df0b5c.setContent(html_7d5e7f1318f5fe8ce02406945ca699c0);
+            
+        
+
+        marker_46eaf2feec57310615f7e7eb6f33e23e.bindPopup(popup_626d410bc8a7abe7e2a83238c2df0b5c)
+        ;
+
+        
+    
+    
+            marker_46eaf2feec57310615f7e7eb6f33e23e.bindTooltip(
+                `<div>
+                     Hannah Joseph Hospital
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_46eaf2feec57310615f7e7eb6f33e23e.setIcon(icon_9e9bac3e1946c1e0709cdd8d9a8557c8);
+            
+    
+            var marker_f804a7f5ce1f0c79cb6c5aaa46968448 = L.marker(
+                [9.8828, 78.0833],
+                {
+}
+            ).addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var icon_e2973ee114305e265884ea44e30ab042 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_cbbd375287b295263d8e66a5000d07eb = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_884f5cd7765132d3368285c59eca9211 = $(`<div id="html_884f5cd7765132d3368285c59eca9211" style="width: 100.0%; height: 100.0%;">Stop 2: Velammal Medical College</div>`)[0];
+                popup_cbbd375287b295263d8e66a5000d07eb.setContent(html_884f5cd7765132d3368285c59eca9211);
+            
+        
+
+        marker_f804a7f5ce1f0c79cb6c5aaa46968448.bindPopup(popup_cbbd375287b295263d8e66a5000d07eb)
+        ;
+
+        
+    
+    
+            marker_f804a7f5ce1f0c79cb6c5aaa46968448.bindTooltip(
+                `<div>
+                     Velammal Medical College
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_f804a7f5ce1f0c79cb6c5aaa46968448.setIcon(icon_e2973ee114305e265884ea44e30ab042);
+            
+    
+            var marker_fcd04c2f7b9afb3aff652ac3bba8bacd = L.marker(
+                [9.9482, 78.1738],
+                {
+}
+            ).addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var icon_af9e00cb250eae43a0c26ec244048930 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_353306f44f6a23029b083c6747950164 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_11048f13511577f88087f72dd0f30ae2 = $(`<div id="html_11048f13511577f88087f72dd0f30ae2" style="width: 100.0%; height: 100.0%;">Stop 3: Meenakshi Mission</div>`)[0];
+                popup_353306f44f6a23029b083c6747950164.setContent(html_11048f13511577f88087f72dd0f30ae2);
+            
+        
+
+        marker_fcd04c2f7b9afb3aff652ac3bba8bacd.bindPopup(popup_353306f44f6a23029b083c6747950164)
+        ;
+
+        
+    
+    
+            marker_fcd04c2f7b9afb3aff652ac3bba8bacd.bindTooltip(
+                `<div>
+                     Meenakshi Mission
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_fcd04c2f7b9afb3aff652ac3bba8bacd.setIcon(icon_af9e00cb250eae43a0c26ec244048930);
+            
+    
+            var marker_c006b8e98114bd2768f0c4fe9a6f7955 = L.marker(
+                [9.9391, 78.1566],
+                {
+}
+            ).addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var icon_83b1f623141f5605fda5f9c54c11c352 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_23fcc99dcdd0dfe18dd840ccf262d4de = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f95f05190f903fbcb49a9af28fbab01d = $(`<div id="html_f95f05190f903fbcb49a9af28fbab01d" style="width: 100.0%; height: 100.0%;">Stop 4: Apollo Hospital</div>`)[0];
+                popup_23fcc99dcdd0dfe18dd840ccf262d4de.setContent(html_f95f05190f903fbcb49a9af28fbab01d);
+            
+        
+
+        marker_c006b8e98114bd2768f0c4fe9a6f7955.bindPopup(popup_23fcc99dcdd0dfe18dd840ccf262d4de)
+        ;
+
+        
+    
+    
+            marker_c006b8e98114bd2768f0c4fe9a6f7955.bindTooltip(
+                `<div>
+                     Apollo Hospital
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_c006b8e98114bd2768f0c4fe9a6f7955.setIcon(icon_83b1f623141f5605fda5f9c54c11c352);
+            
+    
+            var marker_2f6b6a08007acd5a42372b4f7d11b7f0 = L.marker(
+                [9.9328, 78.1362],
+                {
+}
+            ).addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var icon_ff5264bbf0cdb9ccfc1804f9e06fab6a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5fa6e83f89cf6ff3ca6e9d7c46542590 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e18d0cef6d6f44da5afc535645849b12 = $(`<div id="html_e18d0cef6d6f44da5afc535645849b12" style="width: 100.0%; height: 100.0%;">Stop 5: Vadamalayan Hospital</div>`)[0];
+                popup_5fa6e83f89cf6ff3ca6e9d7c46542590.setContent(html_e18d0cef6d6f44da5afc535645849b12);
+            
+        
+
+        marker_2f6b6a08007acd5a42372b4f7d11b7f0.bindPopup(popup_5fa6e83f89cf6ff3ca6e9d7c46542590)
+        ;
+
+        
+    
+    
+            marker_2f6b6a08007acd5a42372b4f7d11b7f0.bindTooltip(
+                `<div>
+                     Vadamalayan Hospital
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_2f6b6a08007acd5a42372b4f7d11b7f0.setIcon(icon_ff5264bbf0cdb9ccfc1804f9e06fab6a);
+            
+    
+            var marker_62fb63339042fd8b4d888d3ff880a993 = L.marker(
+                [9.9252, 78.1198],
+                {
+}
+            ).addTo(map_7a7bb1a8ae649538c0737094d6c4bd7d);
+        
+    
+            var icon_6d330628d04ed109cf0caa2119f95206 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "stop",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_50f11b5297ff50d645f950f6f1ce04e9 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_17b0a735fc8812cdd4b6ee62b870c5a4 = $(`<div id="html_17b0a735fc8812cdd4b6ee62b870c5a4" style="width: 100.0%; height: 100.0%;">END: Blood Bank (Govt Hospital)</div>`)[0];
+                popup_50f11b5297ff50d645f950f6f1ce04e9.setContent(html_17b0a735fc8812cdd4b6ee62b870c5a4);
+            
+        
+
+        marker_62fb63339042fd8b4d888d3ff880a993.bindPopup(popup_50f11b5297ff50d645f950f6f1ce04e9)
+        ;
+
+        
+    
+    
+            marker_62fb63339042fd8b4d888d3ff880a993.bindTooltip(
+                `<div>
+                     Blood Bank (Govt Hospital)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_62fb63339042fd8b4d888d3ff880a993.setIcon(icon_6d330628d04ed109cf0caa2119f95206);
+            
+</script>
+</html>
