@@ -3,7 +3,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.safestring import mark_safe
-from .models import Location
+from .models import Location, NoFlyZone
+from .utils import a_star_search, calculate_distance, solve_tsp
 import folium
 import math
 import datetime
@@ -23,64 +24,35 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-# ====================== 2. BATTERY LOGIC ======================
-def estimate_battery(total_km, num_stops, payload_kg=2.5):
-    BATTERY_CAPACITY_WH  = 5500.0
-    CRUISE_WH_PER_KM     = 45.0
-    HOVER_POWER_W        = 450.0
-    HOVER_SEC_PER_STOP   = 90.0
-    SAFETY_MARGIN        = 0.20
-    TECH_FACTOR          = 1.10
-
-    cruise_energy = total_km * CRUISE_WH_PER_KM
-    hover_energy  = num_stops * HOVER_POWER_W * (HOVER_SEC_PER_STOP / 3600)
-    total_energy = (cruise_energy + hover_energy) * TECH_FACTOR
-    payload_penalty = 1.0 + (max(0, payload_kg - 1.0) * 0.05)
-    total_energy *= payload_penalty
-    battery_used = (total_energy / BATTERY_CAPACITY_WH) * 100
-    return min(round(battery_used * (1 + SAFETY_MARGIN), 1), 100.0)
-
-def calculate_distance(coord1, coord2):
-    R = 6371
-    lat1, lon1 = coord1
-    lat2, lon2 = coord2
-    dlat, dlon = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
-    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
-    return round(R * (2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))), 3)
-
-def solve_tsp(base_location, dest_locations):
-    points = [base_location] + dest_locations
-    n = len(points)
-    route_indices = [0]
-    visited = [False] * n
-    visited[0] = True
-    current = 0
+# ====================== 2. LOGICAL MISSION TELEMETRY ======================
+def calculate_mission_metrics(path_coords, num_destinations):
+    """
+    Calculates logical flight metrics:
+    - Ground Distance: Raw horizontal path length.
+    - Air Range: Ground Distance + Vertical Takeoff/Landing overhead.
+    """
+    ground_km = 0
+    for i in range(len(path_coords) - 1):
+        ground_km += calculate_distance(path_coords[i], path_coords[i+1])
     
-    for _ in range(n - 1):
-        min_dist = float('inf')
-        next_idx = -1
-        for i in range(n):
-            if not visited[i]:
-                d = calculate_distance((points[current].latitude, points[current].longitude), 
-                                     (points[i].latitude, points[i].longitude))
-                if d < min_dist:
-                    min_dist = d
-                    next_idx = i
-        if next_idx != -1:
-            route_indices.append(next_idx)
-            visited[next_idx] = True
-            current = next_idx
-            
-    # Return to base
-    route_indices.append(0)
+    # Vertical Maneuvers: Each stop (dest + start/end) involves one landing and one takeoff.
+    # Total stops in a tour = num_destinations + 1 (the hub)
+    # Total Takeoff/Landing cycles = num_destinations + 1
+    # Altitude = 0.12km (120m)
+    vertical_overhead = (num_destinations + 1) * (0.12 * 2)
     
-    route_points = [points[i] for i in route_indices]
-    total_km = 0
-    for i in range(len(route_points) - 1):
-        total_km += calculate_distance((route_points[i].latitude, route_points[i].longitude),
-                                     (route_points[i+1].latitude, route_points[i+1].longitude))
-                                     
-    return route_points, round(total_km, 2)
+    total_air_km = ground_km + vertical_overhead
+    return round(ground_km, 3), round(total_air_km, 3)
+
+def estimate_battery(air_km, num_stops):
+    """
+    Professional Drone Consumption Model.
+    """
+    # 10% battery per 10km air distance + 2.5% per takeoff/landing cycle
+    consumption = (air_km / 10.0) * 12.0
+    consumption += (num_stops + 1) * 2.5 
+    
+    return min(round(consumption, 1), 100.0)
 
 # ====================== 3. MAIN HOME VIEW ======================
 @login_required(login_url='/login/')
@@ -94,63 +66,111 @@ def home(request):
 
     locations = Location.objects.filter(district=selected_district) if selected_district else Location.objects.none()
     
+    # Logic: Default the base station to the "Main Govt Hospital" or similar
+    govt_hospital = locations.filter(name__icontains="Govt").first() or \
+                    locations.filter(name__icontains="GH").first() or \
+                    locations.first()
+
     context = {
         'districts': districts,
         'selected_district': selected_district,
         'hospitals': locations,
+        'default_base': govt_hospital,
         'show_result': False,
         'date': datetime.datetime.now().strftime("%d %B %Y, %H:%M")
     }
 
-    if request.method == 'POST' and 'base_station' in request.POST:
+    if request.method == 'POST' and ('destinations' in request.POST or 'base_station' in request.POST):
         try:
-            base_id = request.POST.get('base_station')
-            dest_ids = request.POST.getlist('destinations')
+            # Enforce starting at the identified Govt Hospital
+            selected_base_id = request.POST.get('base_station')
+            base_loc = Location.objects.get(id=selected_base_id) if selected_base_id else govt_hospital
             
-            if base_id and dest_ids:
-                base_loc = Location.objects.get(id=base_id)
-                dest_locs = list(Location.objects.filter(id__in=dest_ids))
+            dest_ids = request.POST.getlist('destinations')
+            dest_locs = list(Location.objects.filter(id__in=dest_ids))
+            nofly_zones = list(NoFlyZone.objects.all())
+            
+            if base_loc and dest_locs:
+                # Use Advanced TSP that considers No-Fly Zones via A* distances indirectly or NN
+                route_locs = solve_tsp(base_loc, dest_locs, nofly_zones)
                 
-                route_locs, total_km = solve_tsp(base_loc, dest_locs)
-                route_coords = [(loc.latitude, loc.longitude) for loc in route_locs]
+                # Build fine-grained A* path
+                full_path_coords = []
+                for i in range(len(route_locs)-1):
+                    p1 = (route_locs[i].latitude, route_locs[i].longitude)
+                    p2 = (route_locs[i+1].latitude, route_locs[i+1].longitude)
+                    seg_path = a_star_search(p1, p2, nofly_zones)
+                    full_path_coords.extend(seg_path[:-1])
+                full_path_coords.append((route_locs[-1].latitude, route_locs[-1].longitude))
 
-                # --- HIGH ACCURACY MAP ---
-                m = folium.Map(location=[base_loc.latitude, base_loc.longitude], zoom_start=12, tiles="OpenStreetMap")
+                # Logic: Accurate Metrics (Ground vs Air)
+                ground_km, total_air_km = calculate_mission_metrics(full_path_coords, len(dest_locs))
                 
-                folium.TileLayer(
-                    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-                    attr="Esri", name="Satellite (High Res)", overlay=False
-                ).add_to(m)
+                # Efficiency: How much better is the AI path than the straight line tour?
+                # Actually, efficiency should show optimization quality.
+                # We'll compare AI Path (Ground) vs Straight Line Tour (Ground)
+                straight_tour_km = 0
+                for i in range(len(route_locs)-1):
+                    straight_tour_km += calculate_distance((route_locs[i].latitude, route_locs[i].longitude), 
+                                                         (route_locs[i+1].latitude, route_locs[i+1].longitude))
+                
+                # If they are equal, efficiency is 100% (ideal). 
+                # If A* had to bend, Ground KM > Straight Tour KM, so efficiency drops slightly.
+                efficiency = round((straight_tour_km / ground_km * 100), 1) if ground_km > 0 else 100
 
-                # Draw Route (Solid Blue)
-                folium.PolyLine(route_coords, color="#0d6efd", weight=5, opacity=0.8).add_to(m)
+                # --- ADVANCED MAP VIZ ---
+                m = folium.Map(location=[base_loc.latitude, base_loc.longitude], zoom_start=14, tiles="CartoDB Positron")
+                
+                # Draw No-Fly Zones
+                for zone in nofly_zones:
+                    folium.Circle(
+                        location=[zone.center_lat, zone.center_lon],
+                        radius=zone.radius_km * 1000,
+                        color="#ff4d4d", fill=True, fill_opacity=0.4,
+                        popup=f"DANGER: {zone.name}"
+                    ).add_to(m)
+
+                # Draw A* Intelligent Route
+                if full_path_coords:
+                    folium.PolyLine(full_path_coords, color="#0066FF", weight=5, opacity=0.8, 
+                                  tooltip="AI Optimized Path").add_to(m)
 
                 # Markers
                 for i, loc in enumerate(route_locs):
-                    # Skip the last one as it's the base again
-                    if i > 0 and i == len(route_locs) - 1: continue
-                    
-                    color = "green" if i == 0 else "blue"
-                    icon = "home" if i == 0 else "info-sign"
-                    label = "Base Station" if i == 0 else f"Stop {i}"
-                    
+                    # Label markers for clarity
+                    if i == 0:
+                        label = "START: " + loc.name
+                        icon_color = "green"
+                    elif i == len(route_locs) - 1:
+                        label = "FINAL: " + loc.name
+                        icon_color = "red"
+                    else:
+                        label = f"STOP {i}: {loc.name}"
+                        icon_color = "blue"
+
                     folium.Marker(
                         [loc.latitude, loc.longitude], 
-                        popup=f"<b>{loc.name}</b><br>{label}", 
-                        icon=folium.Icon(color=color, icon=icon)
+                        popup=label,
+                        tooltip=label,
+                        icon=folium.Icon(color=icon_color, icon="hospital-o", prefix="fa")
                     ).add_to(m)
 
-                folium.LayerControl(position="topright").add_to(m)
-                
+                # DEBUG: Check if path exists
+                if not full_path_coords:
+                    print("WARNING: full_path_coords is empty!")
+
                 context.update({
                     'map_html': mark_safe(m._repr_html_()),
-                    'total_km': total_km,
-                    'est_time': int(total_km * 1.5), # Slightly more realistic flight time
-                    'battery': estimate_battery(total_km, len(dest_locs)),
+                    'ground_km': ground_km,
+                    'total_km': total_air_km,
+                    'est_time': int(total_air_km * (60/50)) + (len(dest_locs) * 2), 
+                    'battery': estimate_battery(total_air_km, len(dest_locs)),
+                    'efficiency': efficiency,
                     'show_result': True,
-                    'route_locs': route_locs
                 })
         except Exception as e:
-            context['error'] = str(e)
+            import traceback
+            print(traceback.format_exc()) # Debugging to terminal
+            context['error'] = f"Mission Planning Error: {str(e)}"
 
     return render(request, 'index.html', context)

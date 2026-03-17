@@ -3,17 +3,18 @@
 <style>
     .glass-card {
         background: var(--glass);
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(20px);
         border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        padding: 30px;
+        border-radius: 24px;
+        padding: 32px;
         height: 100%;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
     }
 
     .glass-card:hover {
-        border-color: rgba(0, 209, 255, 0.3);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        border-color: rgba(0, 209, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
     }
 
     .panel-title {
@@ -163,9 +164,11 @@
     .map-container {
         border-radius: 15px;
         overflow: hidden;
-        border: 1px solid var(--glass-border);
+        border: 2px solid var(--glass-border);
         margin-top: 20px;
-        height: 500px !important;
+        height: 550px !important;
+        background: #000;
+        position: relative;
     }
 
     .empty-state {
@@ -201,15 +204,18 @@
     <!-- Sidebar: Mission Control -->
     <div class="col-lg-4">
         <div class="glass-card d-flex flex-column">
-            <h3 class="panel-title">
-                <i class="fas fa-satellite-dish"></i>
-                Mission Control
-            </h3>
+            <div class="mission-briefing mb-4">
+                <h3 class="panel-title mb-1">
+                    <i class="fas fa-helicopter"></i>
+                    Flight Delivery Planner
+                </h3>
+                <p class="text-muted small">Smart Navigation & Safety Management</p>
+            </div>
 
             <form method="POST" class="h-100 d-flex flex-column">
                 {% csrf_token %}
 
-                <label class="form-label-custom">Deployment Zone</label>
+                <label class="form-label-custom">Deployment Territory</label>
                 <select name="district" class="form-select-custom" onchange="this.form.submit()">
                     {% for d in districts %}
                     <option value="{{ d }}" {% if d == selected_district %}selected{% endif %}>{{ d|upper }}</option>
@@ -217,14 +223,14 @@
                 </select>
 
                 {% if hospitals %}
-                <label class="form-label-custom">Base Station (HUB)</label>
-                <select name="base_station" class="form-select-custom">
-                    {% for hospital in hospitals %}
-                    <option value="{{ hospital.id }}">{{ hospital.name }}</option>
-                    {% endfor %}
-                </select>
 
-                <label class="form-label-custom">Delivery Targets (Destinations)</label>
+                <label class="form-label-custom">Deployment Station (Fixed)</label>
+                <div class="p-2 mb-3 rounded-3" style="background: rgba(0, 209, 255, 0.1); border: 1px solid var(--secondary);">
+                    <small class="text-white fw-bold"><i class="fas fa-university me-1"></i> {{ default_base.name }}</small>
+                    <input type="hidden" name="base_station" value="{{ default_base.id }}">
+                </div>
+
+                <label class="form-label-custom">Choose Delivery Points</label>
                 <div class="target-scroll">
                     {% for hospital in hospitals %}
                     <div class="form-check-custom">
@@ -239,7 +245,7 @@
                 </div>
 
                 <button type="submit" class="btn-launch">
-                    <i class="fas fa-paper-plane me-2"></i> Initiate Flight
+                    <i class="fas fa-route me-2"></i> Calculate Logical Route
                 </button>
                 {% endif %}
             </form>
@@ -248,6 +254,12 @@
 
     <!-- Main Content: Visualizer -->
     <div class="col-lg-8">
+        {% if error %}
+        <div class="alert alert-danger border-0 rounded-4 mb-4" style="background: rgba(255, 77, 77, 0.1); color: #FF4D4D;">
+            <i class="fas fa-exclamation-triangle me-2"></i> {{ error }}
+        </div>
+        {% endif %}
+
         {% if show_result %}
         <div class="glass-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -257,26 +269,30 @@
                     </div>
                 </div>
                 <div class="text-end">
-                    <span class="text-muted small" style="letter-spacing: 1px;">TELEMETRY DATA</span><br>
+                    <span class="text-muted small" style="letter-spacing: 1px;">FLIGHT INFO</span><br>
                     <span class="text-white small fw-bold">{{ date }}</span>
                 </div>
             </div>
 
             <div class="row g-0 mt-4 bg-dark-lighter border border-glass rounded-4 overflow-hidden">
-                <div class="col-4 metric-card">
-                    <div class="metric-value value-secondary">{{ total_km }}<span
+                <div class="col-3 metric-card">
+                    <div class="metric-value value-secondary">{{ ground_km }}<span
                             style="font-size: 1rem; margin-left: 3px;">KM</span></div>
-                    <div class="metric-label">Total Distance</div>
+                    <div class="metric-label">Map Route</div>
                 </div>
-                <div class="col-4 metric-card">
-                    <div class="metric-value">{{ est_time }}<span style="font-size: 1rem; margin-left: 3px;">MIN</span>
-                    </div>
-                    <div class="metric-label">Estimated Time</div>
+                <div class="col-3 metric-card" title="Includes Takeoff/Landing altitude">
+                    <div class="metric-value" style="color: #00D1FF;">{{ total_km }}<span
+                            style="font-size: 1rem; margin-left: 3px;">KM</span></div>
+                    <div class="metric-label">Actual Flight</div>
                 </div>
-                <div class="col-4 metric-card">
+                <div class="col-3 metric-card">
                     <div class="metric-value value-success">{{ battery }}<span
                             style="font-size: 1rem; margin-left: 3px;">%</span></div>
-                    <div class="metric-label">Battery Req.</div>
+                    <div class="metric-label">Power Usage</div>
+                </div>
+                <div class="col-3 metric-card" title="Optimization Accuracy">
+                    <div class="metric-value" style="color: #FFD700;">{{ efficiency }}<span style="font-size: 1rem; margin-left: 3px;">%</span></div>
+                    <div class="metric-label">Route Quality</div>
                 </div>
             </div>
 
@@ -297,9 +313,10 @@
         </div>
         {% else %}
         <div class="glass-card empty-state">
-            <i class="fas fa-globe-asia"></i>
-            <h3>System Standby</h3>
-            <p>Waiting for mission parameters. Select a zone and targets to begin visualization.</p>
+            <div class="scanning-circle mb-4"></div>
+            <i class="fas fa-route fa-3x mb-3 text-primary opacity-50"></i>
+            <h3>Mission Planner Ready</h3>
+            <p>Ready to process pathfinding telemetry. Define deployment parameters.</p>
         </div>
         {% endif %}
     </div>
