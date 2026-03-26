@@ -99,6 +99,9 @@ def home(request):
             ordered_ids = request.POST.get('ordered_destinations', '').split(',')
             ordered_ids = [oid for oid in ordered_ids if oid.strip()]
             
+            # --- BASE STATION IDENTIFICATION ---
+            base_loc = drone_base
+            
             if ordered_ids:
                 # User specified exact order via clicks
                 dest_locs = []
