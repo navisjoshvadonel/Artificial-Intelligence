@@ -66,28 +66,27 @@ def home(request):
 
     locations = Location.objects.filter(district=selected_district) if selected_district else Location.objects.none()
     
-    # --- PERSISTENT STATE LOGIC ---
-    # Try to get drone's last location from session; otherwise default to identified Govt Hospital
+    # --- MAIN HUB IDENTIFICATION ---
+    # Prioritize Govt/GH hospitals or Blood Banks as the central hub of logical missions
+    main_hub = locations.filter(name__icontains="Government Rajaji Hospital").first() or \
+                locations.filter(name__icontains="Government").first() or \
+                locations.filter(name__icontains="GH").first() or \
+                locations.filter(is_blood_bank=True).first() or \
+                locations.first()
+
+    # --- DRONE DEPLOYMENT BASE ---
+    # Use drone's last location if it's in the same district, otherwise start from the Hub
     last_loc_id = request.session.get('drone_last_loc_id')
     last_loc = Location.objects.filter(id=last_loc_id).first() if last_loc_id else None
     
-    govt_hospital = locations.filter(name__icontains="Govt").first() or \
-                    locations.filter(name__icontains="GH").first() or \
-                    locations.first()
-    
-    # Use drone's current (persistent) location if it belongs to the selected district
-    drone_base = last_loc if last_loc and last_loc.district == selected_district else govt_hospital
-
-    # --- MADURAI HUB IDENTIFICATION ---
-    madurai_hub = Location.objects.filter(name__icontains="Government Rajaji Hospital").first() or \
-                  Location.objects.filter(district="Madurai", is_blood_bank=True).first()
+    drone_base = last_loc if last_loc and last_loc.district == selected_district else main_hub
 
     context = {
         'districts': districts,
         'selected_district': selected_district,
         'hospitals': locations,
         'default_base': drone_base,
-        'madurai_hub': madurai_hub,
+        'main_hub': main_hub,
         'show_result': False,
         'date': datetime.datetime.now().strftime("%d %B %Y, %H:%M")
     }
@@ -106,12 +105,18 @@ def home(request):
                 # User specified exact order via clicks
                 dest_locs = []
                 for oid in ordered_ids:
+                    # Skip the base location if it's in the ordered list (to avoid star pattern)
+                    if int(oid) == base_loc.id: continue
                     loc = Location.objects.filter(id=oid).first()
                     if loc: dest_locs.append(loc)
+                
+                # Full logical circuit: Start -> Dest1 -> Dest2 ... -> Final Hub
                 route_locs = [base_loc] + dest_locs + [base_loc]
             else:
                 # Fallback to TSP if order wasn't captured (standard checkbox submit)
                 dest_ids = request.POST.getlist('destinations')
+                # Filter out the base location from destinations to ensure a clean TSP cycle
+                dest_ids = [did for did in dest_ids if int(did) != base_loc.id]
                 dest_locs = list(Location.objects.filter(id__in=dest_ids))
                 route_locs = solve_tsp(base_loc, dest_locs, list(NoFlyZone.objects.all()))
             
@@ -181,8 +186,8 @@ def home(request):
 
                 # --- HUB-RELATIVE VECTOR CALCULATIONS ---
                 route_data = []
-                if madurai_hub:
-                    hub_coord = (madurai_hub.latitude, madurai_hub.longitude)
+                if main_hub:
+                    hub_coord = (main_hub.latitude, main_hub.longitude)
                     for i, loc in enumerate(route_locs):
                         target_coord = (loc.latitude, loc.longitude)
                         dist = calculate_distance(hub_coord, target_coord)
