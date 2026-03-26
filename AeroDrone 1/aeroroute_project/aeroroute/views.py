@@ -108,7 +108,7 @@ def home(request):
                 for oid in ordered_ids:
                     loc = Location.objects.filter(id=oid).first()
                     if loc: dest_locs.append(loc)
-                route_locs = [base_loc] + dest_locs
+                route_locs = [base_loc] + dest_locs + [base_loc]
             else:
                 # Fallback to TSP if order wasn't captured (standard checkbox submit)
                 dest_ids = request.POST.getlist('destinations')
