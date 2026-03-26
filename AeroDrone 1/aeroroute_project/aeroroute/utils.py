@@ -10,6 +10,18 @@ def calculate_distance(coord1, coord2):
     a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
     return R * (2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)))
 
+def calculate_bearing(coord1, coord2):
+    """Calculates the bearing between two points (in degrees)."""
+    lat1, lon1 = math.radians(coord1[0]), math.radians(coord1[1])
+    lat2, lon2 = math.radians(coord2[0]), math.radians(coord2[1])
+    
+    dlon = lon2 - lon1
+    y = math.sin(dlon) * math.cos(lat2)
+    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+    
+    bearing = math.atan2(y, x)
+    return (math.degrees(bearing) + 360) % 360
+
 def is_in_nofly(coord, nofly_zones):
     """Check if a coordinate falls inside any No-Fly Zone."""
     lat, lon = coord

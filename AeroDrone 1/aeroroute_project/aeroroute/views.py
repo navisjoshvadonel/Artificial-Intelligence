@@ -66,35 +66,56 @@ def home(request):
 
     locations = Location.objects.filter(district=selected_district) if selected_district else Location.objects.none()
     
-    # Logic: Default the base station to the "Main Govt Hospital" or similar
+    # --- PERSISTENT STATE LOGIC ---
+    # Try to get drone's last location from session; otherwise default to identified Govt Hospital
+    last_loc_id = request.session.get('drone_last_loc_id')
+    last_loc = Location.objects.filter(id=last_loc_id).first() if last_loc_id else None
+    
     govt_hospital = locations.filter(name__icontains="Govt").first() or \
                     locations.filter(name__icontains="GH").first() or \
                     locations.first()
+    
+    # Use drone's current (persistent) location if it belongs to the selected district
+    drone_base = last_loc if last_loc and last_loc.district == selected_district else govt_hospital
+
+    # --- MADURAI HUB IDENTIFICATION ---
+    madurai_hub = Location.objects.filter(name__icontains="Government Rajaji Hospital").first() or \
+                  Location.objects.filter(district="Madurai", is_blood_bank=True).first()
 
     context = {
         'districts': districts,
         'selected_district': selected_district,
         'hospitals': locations,
-        'default_base': govt_hospital,
+        'default_base': drone_base,
+        'madurai_hub': madurai_hub,
         'show_result': False,
         'date': datetime.datetime.now().strftime("%d %B %Y, %H:%M")
     }
 
     if request.method == 'POST' and ('destinations' in request.POST or 'base_station' in request.POST):
         try:
-            # Enforce starting at the identified Govt Hospital
-            selected_base_id = request.POST.get('base_station')
-            base_loc = Location.objects.get(id=selected_base_id) if selected_base_id else govt_hospital
+            # --- EXACT ORDER LOGIC ---
+            # Capture the specific order from the hidden 'ordered_destinations' field
+            ordered_ids = request.POST.get('ordered_destinations', '').split(',')
+            ordered_ids = [oid for oid in ordered_ids if oid.strip()]
             
-            dest_ids = request.POST.getlist('destinations')
-            dest_locs = list(Location.objects.filter(id__in=dest_ids))
+            if ordered_ids:
+                # User specified exact order via clicks
+                dest_locs = []
+                for oid in ordered_ids:
+                    loc = Location.objects.filter(id=oid).first()
+                    if loc: dest_locs.append(loc)
+                route_locs = [base_loc] + dest_locs
+            else:
+                # Fallback to TSP if order wasn't captured (standard checkbox submit)
+                dest_ids = request.POST.getlist('destinations')
+                dest_locs = list(Location.objects.filter(id__in=dest_ids))
+                route_locs = solve_tsp(base_loc, dest_locs, list(NoFlyZone.objects.all()))
+            
             nofly_zones = list(NoFlyZone.objects.all())
             
             if base_loc and dest_locs:
-                # Use Advanced TSP that considers No-Fly Zones via A* distances indirectly or NN
-                route_locs = solve_tsp(base_loc, dest_locs, nofly_zones)
-                
-                # Build fine-grained A* path
+                # Build fine-grained A* path following the specified order
                 full_path_coords = []
                 for i in range(len(route_locs)-1):
                     p1 = (route_locs[i].latitude, route_locs[i].longitude)
@@ -155,6 +176,32 @@ def home(request):
                         icon=folium.Icon(color=icon_color, icon="hospital-o", prefix="fa")
                     ).add_to(m)
 
+                # --- HUB-RELATIVE VECTOR CALCULATIONS ---
+                route_data = []
+                if madurai_hub:
+                    hub_coord = (madurai_hub.latitude, madurai_hub.longitude)
+                    for i, loc in enumerate(route_locs):
+                        target_coord = (loc.latitude, loc.longitude)
+                        dist = calculate_distance(hub_coord, target_coord)
+                        from .utils import calculate_bearing # local import for safety
+                        bearing = calculate_bearing(hub_coord, target_coord)
+                        
+                        # Friendly navigation name (N, NE, E...)
+                        directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+                        dir_name = directions[int((bearing + 22.5) / 45) % 8]
+                        
+                        route_data.append({
+                            'loc': loc,
+                            'step': i,
+                            'vec_dist': round(dist, 2),
+                            'vec_bearing': round(bearing, 1),
+                            'vec_dir': dir_name
+                        })
+
+                # --- UPDATE PERSISTENT STATE ---
+                # The drone's new location is the last destination in this mission
+                request.session['drone_last_loc_id'] = route_locs[-1].id
+
                 # DEBUG: Check if path exists
                 if not full_path_coords:
                     print("WARNING: full_path_coords is empty!")
@@ -166,6 +213,7 @@ def home(request):
                     'est_time': int(total_air_km * (60/50)) + (len(dest_locs) * 2), 
                     'battery': estimate_battery(total_air_km, len(dest_locs)),
                     'efficiency': efficiency,
+                    'route_data': route_data,
                     'show_result': True,
                 })
         except Exception as e:

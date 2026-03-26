@@ -212,8 +212,9 @@
                 <p class="text-muted small">Smart Navigation & Safety Management</p>
             </div>
 
-            <form method="POST" class="h-100 d-flex flex-column">
+            <form method="POST" id="mission-form" class="h-100 d-flex flex-column">
                 {% csrf_token %}
+                <input type="hidden" name="ordered_destinations" id="ordered-destinations">
 
                 <label class="form-label-custom">Deployment Territory</label>
                 <select name="district" class="form-select-custom" onchange="this.form.submit()">
@@ -233,13 +234,14 @@
                 <label class="form-label-custom">Choose Delivery Points</label>
                 <div class="target-scroll">
                     {% for hospital in hospitals %}
-                    <div class="form-check-custom">
+                    <div class="form-check-custom hospital-option" data-id="{{ hospital.id }}" onclick="toggleHospital({{ hospital.id }})">
                         <input class="form-check-input" type="checkbox" name="destinations" value="{{ hospital.id }}"
-                            id="target{{ hospital.id }}">
+                            id="target{{ hospital.id }}" onclick="event.stopPropagation()">
                         <label class="form-check-label text-truncate" for="target{{ hospital.id }}"
                             style="font-size: 0.85rem;">
                             {{ hospital.name }}
                         </label>
+                        <span class="badge rounded-pill bg-primary ms-auto order-badge d-none" id="badge{{ hospital.id }}"></span>
                     </div>
                     {% endfor %}
                 </div>
@@ -300,6 +302,33 @@
                 {{ map_html|safe }}
             </div>
 
+            <!-- Vector Telemetry from Madurai Hub -->
+            <div class="mt-4">
+                <h5 class="form-label-custom mb-3"><i class="fas fa-compass me-2"></i> Hub-Relative Telemetry (Madurai Hub)</h5>
+                <div class="bg-dark-lighter border border-glass rounded-4 p-3" style="max-height: 200px; overflow-y: auto;">
+                    <table class="table table-dark table-borderless table-sm mb-0 small">
+                        <thead>
+                            <tr class="text-muted" style="font-size: 0.65rem; border-bottom: 1px solid var(--glass-border);">
+                                <th>STOP</th>
+                                <th>LOCATION</th>
+                                <th>DISTANCE</th>
+                                <th>BEARING</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for step in route_data %}
+                            <tr>
+                                <td class="text-primary fw-bold">#{{ step.step }}</td>
+                                <td class="text-white">{{ step.loc.name }}</td>
+                                <td class="text-secondary">{{ step.vec_dist }} km</td>
+                                <td class="text-info">{{ step.vec_bearing }}° ({{ step.vec_dir }})</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="mt-4 p-3 rounded-3"
                 style="background: rgba(0, 102, 255, 0.05); border-left: 4px solid var(--primary);">
                 <div class="d-flex align-items-center gap-3">
@@ -321,4 +350,51 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+    let clickOrder = [];
+
+    function toggleHospital(id) {
+        const checkbox = document.getElementById('target' + id);
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            updateOrder(id, checkbox.checked);
+        }
+    }
+
+    // Handle direct checkbox clicks too
+    document.querySelectorAll('.form-check-input').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const id = e.target.value;
+            updateOrder(id, e.target.checked);
+        });
+    });
+
+    function updateOrder(id, isChecked) {
+        id = id.toString();
+        if (isChecked) {
+            if (!clickOrder.includes(id)) {
+                clickOrder.push(id);
+            }
+        } else {
+            clickOrder = clickOrder.filter(i => i !== id);
+        }
+        
+        // Update hidden field
+        const orderedField = document.getElementById('ordered-destinations');
+        if (orderedField) {
+            orderedField.value = clickOrder.join(',');
+        }
+        
+        // Update visual badges
+        document.querySelectorAll('.order-badge').forEach(b => b.classList.add('d-none'));
+        clickOrder.forEach((oid, index) => {
+            const badge = document.getElementById('badge' + oid);
+            if (badge) {
+                badge.innerText = index + 1;
+                badge.classList.remove('d-none');
+            }
+        });
+    }
+</script>
 {% endblock %}
